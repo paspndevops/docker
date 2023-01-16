@@ -1,0 +1,45 @@
+#SSH Server
+#VERSION 0.0.1
+
+#Base Image ## sudo chmod 666 /var/run/docker.sock
+#docker build -t satya/ssh:0.0.1 . -f ssh-dockerfile
+#docker network create --driver bridge my-network
+#docker run -d -p 32:22 --name ssh-svr --network some-network satya/ssh:0.0.1
+#sudo ufw allow proto tcp from any to any port 22
+#sudo ufw allow proto tcp from any to any port 32
+#sudo ufw enable
+#sudo ufw status
+#docker port ssh-svr 22
+#ssh root@127.0.0.1 -p 32
+#mysql -h mysql-server -uguest -p
+#sudo docker container stop $(sudo docker container ls -aq) && sudo docker system prune -af --volumes
+
+FROM ubuntu:18.04
+
+#Maintainer Info.
+MAINTAINER Ivan Chuang
+
+#Update APT repository & Install OpenSSH
+RUN apt-get update \
+    && apt-get install -y openssh-server openssh-client 
+#    && apt-get install -y mysql-client
+
+#Establish the operating directory of OpenSSH
+RUN mkdir /var/run/sshd
+
+#Set Root password
+RUN echo 'root:hellossh' | chpasswd
+
+#Allow Root login
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' \
+    /etc/ssh/sshd_config
+
+#SSH login fix
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional \
+    pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+#expose port 22
+EXPOSE 22
+
+#Commands to be executed by default
+CMD ["/usr/sbin/sshd","-D"]
